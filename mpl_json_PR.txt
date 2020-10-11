@@ -1,25 +1,77 @@
-This PR fully implements style dictionaries in the 'mpl' drawer as JSON files. qcstyle.py now contains a single DefaultStyle class. If the user selects the 'iqx' or 'bw' color scheme, it is read in from a JSON file. The 'default' style is now a dictionary which simplifies the import of other styles. Users can create their own JSON files which can be selected using the 'style' param.
+This PR fully implements style dictionaries in the 'mpl' drawer as JSON files. qcstyle.py now
+contains a single DefaultStyle class. If the user selects the 'iqx' or 'bw' color scheme, it is read
+in from a JSON file. The 'default' style is now a dictionary which simplifies the import of other
+styles. Users can create their own JSON files which can be selected using the 'style' param.
 
-In addition to the functional changes, extensive documentation changes were made to 'circuit_drawer' and 'QuantumCircuit.draw' which included cleaning up language and bringing all the parameters and style dict items up-to-date with the current state of the code.
+In addition to the functional changes, extensive documentation changes were made to 'circuit_drawer'
+and 'QuantumCircuit.draw' which included cleaning up language and bringing all the parameters and
+style dict items up-to-date with the current state of the code.
 
-Significant structural changes were made to 'matplotlib.py', which included some variable and method name changes and some reordering of the code, especially in the __init__. These changes were made to make future maintenance of the code easier.
+Significant structural changes were made to 'matplotlib.py', which included some variable and method
+name changes and some reordering of the code, especially in the __init__. These changes were made to
+make future maintenance of the code easier.
 
 These are the changes,
 
-- First and foremost is that all of these changes should be 100% backward compatible. No functionality has been removed and no changes should cause a user to have to alter previous calls to any of the drawers.
-- The docs in 'circuit_drawer', which are essentially duplicated in 'QuantumCircuit.draw', were seriously out-of-date with the state of the code. These are now current.
-- There were 3 items in the 'style' dict that were not implemented in any of the code - 'latexdrawerstyle', 'compress', and 'usepiformat'. Discussions indicate these are not needed, so they have been removed. If a user had one of these in a 'style' dict, they will receive a warning saying it's not valid. Since there was no function for the item, the function of the drawer will not change.
-- Some parameters were being passed to the drawers, but never used. An example is 'reverse_bits'. 'circuit_drawer' uses this in the call to '_get_layered_instructions', which is the only place it was needed. But 'reverse_bits' was then being passed to the 'mpl' and 'latex' drawers where it was ignored. Now only relevant parameters are passed from 'circuit_drawer' down through to the final drawer classes.
-- There was apparently an intention when the 'latex' drawer was split off from the main drawer, to use the 'BWStyle' from 'qcstyle.py'. 'BWStyle' was loaded at the top of the 'latex' drawer, but never used. The style load has been removed.
-- There is now 1 class in 'qcstyle.py' which is 'DefaultStyle'. This class contains 2 dicts, 'colors' and 'style'. 'colors' is only there for informational purposes, as a way to indicate which is the 'pauli' color, for instance. The 'style' dict contains all the 'style' items for the 'mpl' drawer.
-- The 'default' style is always first instantiated and then if another style has been selected, it will be read in from a JSON file and will overwrite 'default' style items with any items from the JSON file. This is how the new 'iqx' and the 'bw' styles are loaded and the same method will work for any user styles.
-- The path search for styles works as follows,
-   - There is a new directory, '<qiskit location>/qiskit-terra/qiskit/visualization/styles' which contains the 'iqx' and 'bw' JSON files. This is searched first.
-   - There is a new config file item in 'settings.conf' called 'circuit_mpl_style_path'. This can be set to one or more directories to search separated by ';'. For example, 'circuit_mpl_style-path = /home/user;/home/user/styles'. These directories are searched next in order.
-   - Finally if none was found previously, the search is done for the raw JSON file name, e.g. 'user_style1.json'.
-- Full error trapping now occurs on JSON file loads. For all errors, a warning message is displayed indicating the error and then informing the user that the 'default' style will be used. This means no JSON errors cause failure of the drawer.
-- In addition to the obvious 'FileNotFound', 'JSONDecodeError' is also trapped and the warning message will indicate the line and column number of the faulty JSON.
-- The previous functionality of passing a dict to the 'style' parameter in 'circuit_drawer' or 'draw' works as it did before, and these style changes are done after 'default' is loaded and after any JSON file loads.
-- 3 new 'mpl' tests with images were added - 'reverse_bits', 'bw', and 'user_style.'
+- First and foremost is that all of these changes should be 100% backward compatible. No
+  functionality has been removed and no changes should cause a user to have to alter previous calls
+  to any of the drawers.
 
-Here is a sample output using a JSON loaded user style. In addition to the obvious color changes, index numbers are added, the right margin has been increased, and the 'Phase' name was changed using 'displaytext'. Latex could be used for these names.
+- The docs in 'circuit_drawer', which are essentially duplicated in 'QuantumCircuit.draw', were
+  seriously out-of-date with the state of the code. These are now current.
+
+- There were 3 items in the 'style' dict that were not implemented in any of the code
+  'latexdrawerstyle', 'compress', and 'usepiformat'. Discussions indicate these are not needed, so
+  they have been removed. If a user had one of these in a 'style' dict, they will receive a warning
+  saying it's not valid. Since there was no function for the item, the function of the drawer will
+  not change.
+
+- Some parameters were being passed to the drawers, but never used. An example is 'reverse_bits'.
+  'circuit_drawer' uses this in the call to '_get_layered_instructions', which is the only place it
+  was needed. But 'reverse_bits' was then being passed to the 'mpl' and 'latex' drawers where it was
+  ignored. Now only relevant parameters are passed from 'circuit_drawer' down through to the final
+  drawer classes.
+
+- There was apparently an intention when the 'latex' drawer was split off from the main drawer, to
+  use the 'BWStyle' from 'qcstyle.py'. 'BWStyle' was loaded at the top of the 'latex' drawer, but
+  never used. The style load has been removed.
+
+- There is now 1 class in 'qcstyle.py' which is 'DefaultStyle'. This class contains 2 dicts,
+  'colors' and 'style'. 'colors' is only there for informational purposes, as a way to indicate
+  which is the 'pauli' color, for instance. The 'style' dict contains all the 'style' items for the
+  'mpl' drawer.
+
+- The 'default' style is always first instantiated and then if another style has been selected, it
+  will be read in from a JSON file and will overwrite 'default' style items with any items from the
+  JSON file. This is how the new 'iqx' and the 'bw' styles are loaded and the same method will work
+  for any user styles.
+
+- The path search for styles works as follows,
+   
+   - There is a new directory, '<qiskit location>/qiskit-terra/qiskit/visualization/styles' which
+     contains the 'iqx' and 'bw' JSON files. This is searched first.
+   
+   - There is a new config file item in 'settings.conf' called 'circuit_mpl_style_path'. This can be
+     set to one or more directories to search separated by ';'. For example, 'circuit_mpl_style-path =
+     /home/user;/home/user/styles'. These directories are searched next in order.
+   
+   - Finally if none was found previously, the search is done for the raw JSON file name, e.g.
+     'user_style1.json'.
+
+- Full error trapping now occurs on JSON file loads. For all errors, a warning message is displayed
+  indicating the error and then informing the user that the 'default' style will be used. This means
+  no JSON errors cause failure of the drawer.
+
+- In addition to the obvious 'FileNotFound', 'JSONDecodeError' is also trapped and the warning
+  message will indicate the line and column number of the faulty JSON.
+
+- The previous functionality of passing a dict to the 'style' parameter in 'circuit_drawer' or
+  'draw' works as it did before, and these style changes are done after 'default' is loaded and
+  after any JSON file loads.
+
+- 3 new 'mpl' tests with images were added  'reverse_bits', 'bw', and 'user_style.'
+
+Here is a sample output using a JSON loaded user style. In addition to the obvious color changes,
+index numbers are added, the right margin has been increased, and the 'Phase' name was changed using
+'displaytext'. Latex could be used for these names.
+
